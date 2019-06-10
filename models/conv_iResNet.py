@@ -55,14 +55,13 @@ def downsample_shape(shape):
 
 class conv_iresnet_block(nn.Module):
     def __init__(self, in_shape, int_ch, numTraceSamples=0, numSeriesTerms=0,
-                 stride=1, svd_clipping=True, coeff=.97, input_nonlin=True,
+                 stride=1, coeff=.97, input_nonlin=True,
                  actnorm=True, n_power_iter=5, nonlin="elu"):
         """
         buid invertible bottleneck block
         :param in_shape: shape of the input (channels, height, width)
         :param int_ch: dimension of intermediate layers
         :param stride: 1 if no downsample 2 if downsample
-        :param svd_clipping: if true uses svd clipping to enforce lipschitz constraint, spectral norm otherwise
         :param coeff: desired lipschitz constant
         :param input_nonlin: if true applies a nonlinearity on the input
         :param actnorm: if true uses actnorm like GLOW
@@ -76,7 +75,6 @@ class conv_iresnet_block(nn.Module):
         self.coeff = coeff
         self.numTraceSamples = numTraceSamples
         self.numSeriesTerms = numSeriesTerms
-        self.svd_clipping = svd_clipping
         self.n_power_iter = n_power_iter
         nonlin = {
             "relu": nn.ReLU,
@@ -147,9 +145,7 @@ class conv_iresnet_block(nn.Module):
         return x
     
     def _wrapper_spectral_norm(self, layer, shapes, kernel_size):
-        if self.svd_clipping:
-            return layer
-        elif kernel_size == 1:
+        if kernel_size == 1:
             # use spectral norm fc, because bound are tight for 1x1 convolutions
             return spectral_norm_fc(layer, self.coeff, 
                                     n_power_iterations=self.n_power_iter)
@@ -161,7 +157,7 @@ class conv_iresnet_block(nn.Module):
 
 class scale_block(nn.Module):
     def __init__(self, steps, in_shape, int_dim, squeeze=True, n_terms=0, n_samples=0,
-                 svd_clipping=True, coeff=.9, input_nonlin=True, actnorm=True, split=True,
+                 coeff=.9, input_nonlin=True, actnorm=True, split=True,
                  n_power_iter=5, nonlin="relu"):
         super(scale_block, self).__init__()
         self.in_shape = in_shape
@@ -183,7 +179,7 @@ class scale_block(nn.Module):
             self.out_shapes = [conv_shape]
 
         self.stack = self._make_stack(steps, n_terms, n_samples, conv_shape, int_dim,
-                                      svd_clipping, input_nonlin, coeff, actnorm, n_power_iter, nonlin)
+                                      input_nonlin, coeff, actnorm, n_power_iter, nonlin)
 
     @staticmethod
     def _make_stack(steps, n_terms, n_samples, in_shape, int_dim, clipping,
@@ -193,7 +189,7 @@ class scale_block(nn.Module):
         for i in range(steps):
             block_list.append(conv_iresnet_block(in_shape, int_dim, n_samples, n_terms,
                                                  stride=1, input_nonlin=True if input_nonlin else i > 0,
-                                                 svd_clipping=clipping, coeff=coeff, actnorm=actnorm,
+                                                 coeff=coeff, actnorm=actnorm,
                                                  n_power_iter=n_power_iter, nonlin=nonlin))
 
         return block_list
@@ -237,7 +233,7 @@ class scale_block(nn.Module):
 class multiscale_conv_iResNet(nn.Module):
     def __init__(self, in_shape, nBlocks, nStrides, nChannels, init_squeeze=False, inj_pad=0,
                  coeff=.9, density_estimation=False, nClasses=None,
-                 svd_clipping=True, numTraceSamples=1, numSeriesTerms=1,
+                 numTraceSamples=1, numSeriesTerms=1,
                  n_power_iter=5,
                  actnorm=True, learn_prior=True, nonlin="relu"):
         super(multiscale_conv_iResNet, self).__init__()
@@ -262,13 +258,11 @@ class multiscale_conv_iResNet(nn.Module):
         # parameters for trace estimation
         self.numTraceSamples = numTraceSamples if density_estimation else 0
         self.numSeriesTerms = numSeriesTerms if density_estimation else 0
-        # do not use spectral norm if clipping
-        self.svd_clipping = svd_clipping
         self.n_power_iter = n_power_iter
 
         self.stack, self.in_shapes = self._make_stack(in_shape, nBlocks,
                                                       nStrides, nChannels, numSeriesTerms, numTraceSamples,
-                                                      svd_clipping, coeff, actnorm, n_power_iter, nonlin)
+                                                      coeff, actnorm, n_power_iter, nonlin)
         # make prior distribution
         self._make_prior(learn_prior)
         # make classifier
@@ -424,7 +418,7 @@ class multiscale_conv_iResNet(nn.Module):
 class conv_iResNet(nn.Module):
     def __init__(self, in_shape, nBlocks, nStrides, nChannels, init_ds=2, inj_pad=0,
                  coeff=.9, density_estimation=False, nClasses=None,
-                 svd_clipping=True, numTraceSamples=1, numSeriesTerms=1,
+                 numTraceSamples=1, numSeriesTerms=1,
                  n_power_iter=5,
                  block=conv_iresnet_block,
                  actnorm=True, learn_prior=True,
@@ -440,8 +434,6 @@ class conv_iResNet(nn.Module):
         # parameters for trace estimation
         self.numTraceSamples = numTraceSamples if density_estimation else 0
         self.numSeriesTerms = numSeriesTerms if density_estimation else 0
-        # do not use spectral norm if clipping
-        self.svd_clipping = svd_clipping
         self.n_power_iter = n_power_iter
 
         print('')
@@ -454,7 +446,7 @@ class conv_iResNet(nn.Module):
 
         self.stack, self.in_shapes, self.final_shape = self._make_stack(nChannels, nBlocks, nStrides,
                                                                         in_shape, coeff, block,
-                                                                        svd_clipping, actnorm, n_power_iter, nonlin)
+                                                                        actnorm, n_power_iter, nonlin)
 
         # make prior distribution
         self._make_prior(learn_prior)
@@ -487,7 +479,7 @@ class conv_iResNet(nn.Module):
         return self.prior().log_prob(z.view(z.size(0), -1)).sum(dim=1)
 
     def _make_stack(self, nChannels, nBlocks, nStrides, in_shape, coeff, block,
-                    svd_clipping, actnorm, n_power_iter, nonlin):
+                    actnorm, n_power_iter, nonlin):
         """ Create stack of iresnet blocks """
         block_list = nn.ModuleList()
         in_shapes = []
@@ -499,7 +491,6 @@ class conv_iResNet(nn.Module):
                                         numSeriesTerms=self.numSeriesTerms,
                                         stride=(stride if j == 0 else 1),  # use stride if first layer in block else 1
                                         input_nonlin=(i + j > 0),  # add nonlinearity to input for all but fist layer
-                                        svd_clipping=svd_clipping,
                                         coeff=coeff,
                                         actnorm=actnorm,
                                         n_power_iter=n_power_iter,
@@ -623,7 +614,7 @@ if __name__ == "__main__":
     in_shape = (batch_size, channels, h, w)
     x = torch.randn((batch_size, channels, h, w), requires_grad=True)
 
-    block = conv_iresnet_block(in_shape[1:], 32, stride=1, svd_clipping=True, actnorm=True)
+    block = conv_iresnet_block(in_shape[1:], 32, stride=1, actnorm=True)
     out, tr = block(x)#, ignore_logdet=True)
     print("block")
     for i in range(10):

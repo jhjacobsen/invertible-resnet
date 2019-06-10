@@ -55,8 +55,6 @@ parser.add_argument('-norm', '--norm', dest='norm', action='store_true',
                     help='compute norms of conv operators')
 parser.add_argument('-analysisTraceEst', '--analysisTraceEst', dest='analysisTraceEst', action='store_true',
                     help='analysis of trace estimation')
-parser.add_argument('-svdClipping', '--svdClipping', dest='svdClipping', action='store_true',
-                    help='clipping of singular values')
 parser.add_argument('-multiScale', '--multiScale', dest='multiScale', action='store_true',
                     help='use multiscale')
 parser.add_argument('-fixedPrior', '--fixedPrior', dest='fixedPrior', action='store_true',
@@ -253,7 +251,6 @@ def main():
                             inj_pad=args.inj_pad,
                             in_shape=in_shape,
                             coeff=args.coeff,
-                            svd_clipping=args.svdClipping,
                             numTraceSamples=args.numTraceSamples,
                             numSeriesTerms=args.numSeriesTerms,
                             n_power_iter = args.powerIterSpectralNorm,

@@ -117,7 +117,7 @@ def train(args, model, optimizer, epoch, trainloader, trainset, viz, use_cuda, t
             loss = criterion(out, targets) # Loss
         
         # logging for sigmas. NOTE: needs to be done before backward-call
-        if args.densityEstimation and args.log_verbose and not args.svdClipping:
+        if args.densityEstimation and args.log_verbose:
             if batch_idx % args.log_every == 0:
                 sigmas = []
                 for k in model.state_dict().keys():
@@ -130,11 +130,6 @@ def train(args, model, optimizer, epoch, trainloader, trainset, viz, use_cuda, t
         loss.backward()  # Backward Propagation
         optimizer.step()  # Optimizer update
                 
-        # do clippling if selected
-        if batch_idx % 20 == 0:
-            if args.svdClipping:
-                clip_conv_layer(model, args.coeff, use_cuda)   
-
         if args.densityEstimation: # logging for density estimation
             if batch_idx % args.log_every == 0:
                 mean_trace = trace.mean().item()

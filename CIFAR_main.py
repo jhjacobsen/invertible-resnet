@@ -238,7 +238,7 @@ def main():
                                        args.nBlocks, args.nStrides, args.nChannels,
                                        args.init_ds == 2,
                                        args.inj_pad, args.coeff, args.densityEstimation,
-                                       args.nClasses, args.svdClipping,
+                                       args.nClasses, 
                                        args.numTraceSamples, args.numSeriesTerms,
                                        args.powerIterSpectralNorm,
                                        actnorm=(not args.noActnorm),

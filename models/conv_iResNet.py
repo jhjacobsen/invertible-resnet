@@ -182,7 +182,7 @@ class scale_block(nn.Module):
                                       input_nonlin, coeff, actnorm, n_power_iter, nonlin)
 
     @staticmethod
-    def _make_stack(steps, n_terms, n_samples, in_shape, int_dim, clipping,
+    def _make_stack(steps, n_terms, n_samples, in_shape, int_dim,
                     input_nonlin, coeff, actnorm, n_power_iter, nonlin):
         """ Create stack of iresnet blocks """
         block_list = nn.ModuleList()
@@ -284,14 +284,14 @@ class multiscale_conv_iResNet(nn.Module):
         return self.in_shapes
 
     def _make_stack(self, in_shape, nSteps, nStrides, nChannels, n_terms,
-                    n_samples, clipping, coeff, actnorm, n_power_iter, nonlin):
+                    n_samples, coeff, actnorm, n_power_iter, nonlin):
         blocks = nn.ModuleList()
         n_blocks = len(nSteps)
         in_shapes = [in_shape]
         for i, (steps, stride, channels) in enumerate(zip(nSteps, nStrides, nChannels)):
             block = scale_block(steps, in_shape, channels,
                                 stride == 2, n_terms, n_samples,
-                                clipping, coeff, i > 0, actnorm,
+                                coeff, i > 0, actnorm,
                                 i < n_blocks - 1,
                                 n_power_iter, 
                                 nonlin)  # split on all but last layer

@@ -305,7 +305,7 @@ def main():
         return
 
     if args.interpolate:
-        interpolate(model, testloader, testset, start_epoch, use_cuda, best_objective, args.dataset, full_fname)
+        interpolate(model, testloader, testset, start_epoch, use_cuda, best_objective, args.dataset)
         return
 
     if args.evaluate:

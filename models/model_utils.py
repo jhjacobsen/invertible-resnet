@@ -223,7 +223,7 @@ def process_maxmin_groupsize(x, group_size, axis=-1):
 
     if num_channels % group_size:
         raise ValueError('number of features({}) is not a '
-                         'multiple of group_size({})'.format(num_channels, num_units))
+                         'multiple of group_size({})'.format(num_channels, num_channels))
     size[axis] = -1
     if axis == -1:
         size += [group_size]

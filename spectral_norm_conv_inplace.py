@@ -94,10 +94,7 @@ class SpectralNormConv(object):
         factorReverse = torch.max(torch.ones(1).to(weight.device),
                                   sigma / self.coeff)
         # for logging
-        weight_v_det = weight_v.detach()
-        u_det = u.detach()
-        torch.max(torch.dot(u_det.view(-1), weight_v_det),
-                  torch.dot(u_det.view(-1), weight_v_det), out=sigma_log)
+        sigma_log.copy_(sigma.detach())
 
         # rescaling
         weight = weight / (factorReverse + 1e-5)  # for stability

@@ -92,10 +92,10 @@ class SpectralNorm(object):
         # soft normalization: only when sigma larger than coeff
         factor = torch.max(torch.ones(1).to(weight.device), sigma / self.coeff)
         weight = weight / factor
+
         # for logging
-        sigma_det = sigma.detach()
-        torch.max(torch.ones(1).to(weight.device), sigma_det / self.coeff,
-                  out=sigma_log)
+        sigma_log.copy_(sigma.detach())
+
         return weight
 
     def remove(self, module):

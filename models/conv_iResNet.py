@@ -589,8 +589,7 @@ class conv_iResNet(nn.Module):
 
     def set_num_terms(self, n_terms):
         for block in self.stack:
-            for layer in block.stack:
-                layer.numSeriesTerms = n_terms
+            block.numSeriesTerms = n_terms
 
 
 if __name__ == "__main__":

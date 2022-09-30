@@ -1,7 +1,7 @@
 certifi==2019.3.9
 chardet==3.0.4
 idna==2.8
-joblib==0.13.2
+joblib==1.2.0
 numpy==1.16.4
 Pillow==6.2.0
 pyzmq==18.0.1
